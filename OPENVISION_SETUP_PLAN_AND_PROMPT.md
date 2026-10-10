@@ -10,7 +10,7 @@ Setup branch: `feature/windows-ipa-build`
 
 PR #1 is open and draft. It adds a manually triggered macOS GitHub Actions build, unsigned IPA packaging, and Windows installation instructions. A successful build, Windows installation, glasses compatibility, and locked-iPhone operation have not been verified. Recheck this state when resuming.
 
-The user has a Windows desktop and an iPhone, with no local Mac/Xcode environment. The local C: checkout path is unknown. Do not invent a local path or assume a cloud workspace is the user's desktop.
+The user has a Windows desktop and an iPhone, with no local Mac/Xcode environment. The local checkout is `C:\Projects\OpenVision`, verified by its `origin` remote pointing at sman007/OpenVision, with `upstream` set to rayl15/OpenVision. Confirm it still exists rather than assuming it; do not invent any other local path or assume a cloud workspace is the user's desktop.
 
 The user authorizes completing Meta configuration, adding the required repository secrets, running and fixing the build, and progressing toward installation. Desktop browser permission has been granted, but an actual desktop browser connection must be verified.
 
@@ -20,7 +20,7 @@ The user authorizes completing Meta configuration, adding the required repositor
    - Confirm the browser tool controls the user's actual desktop browser.
    - If unavailable, identify the environment's supported connector and provide verified setup instructions. Do not claim that opening a conversation on desktop automatically grants control.
    - Inspect repository instructions, PR #1, current workflow, project configuration, and setup documentation.
-   - If filesystem access is available, locate any existing checkout by checking its Git remote against sman007/OpenVision. Record the actual path without guessing.
+   - The checkout is recorded above. Re-verify its Git remote against sman007/OpenVision instead of searching for it again, and never guess a path.
 
 2. **Complete Meta developer configuration**
    - Start from https://wearables.developer.meta.com/ and follow the current official Wearables developer instructions.
@@ -99,8 +99,8 @@ Let me enter passwords and complete two-factor authentication, account
 agreements, and physical iPhone prompts. Use my existing accounts.
 Do not store an OpenAI key in GitHub Actions.
 
-If you can access my desktop filesystem, locate any existing local
-checkout and verify its Git remote. Never invent a C: drive path.
+My local checkout is C:\Projects\OpenVision. Verify its Git remote
+rather than searching for it, and never invent another C: drive path.
 
 Use on-demand vision first and live mode only when needed. Preserve the
 US$10 initial testing budget and US$25 monthly alert target; verify the
