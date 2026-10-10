@@ -12,6 +12,7 @@ There are **two different OpenAI connection paths** in OpenVision. They do not p
 | --- | --- | --- | --- | --- |
 | ChatGPT subscription | In-app **Sign in with ChatGPT**, via an unofficial Codex CLI-style authentication integration | Single photo captures | Ask a question about a captured photo and hear an answer; **not** the full ChatGPT Advanced Voice video experience | No separate OpenAI API charges for supported subscription requests, subject to account limits and provider changes |
 | OpenAI Realtime | OpenAI Platform **API key** | Repeated camera frames while a live stream runs | Streaming two-way audio with visual input | **Separate pay-as-you-go API charges** for audio, images, and applicable text |
+| Gemini Live | Gemini API key and a supported live model | Sampled live camera frames | Conversational voice plus visual context | Google API pricing and quotas; free-tier eligibility must be verified |
 | Local vision | On-device SmolVLM2 model | Photos or experimental local live frames | On-device visual Q&A with local speech pipeline | No OpenAI API usage, but device resource costs and typically weaker accuracy |
 
 **Important:** Signing into ChatGPT does **not** turn on OpenAI Realtime API video or provide a free continuous live camera session. A ChatGPT Plus/Pro subscription is not an API credit balance. The subscription connection is unofficial and can change or stop working.
@@ -58,7 +59,19 @@ If the ChatGPT option does not appear, check that you are running a revision tha
 
 **Known risks:** Gen 3 camera support is not yet confirmed; real camera input can pause when the iPhone is locked or the application enters the background; network delay, motion blur, glare, and hallucinated text can interfere with practical assistance.
 
-## C. Free alternative: local SmolVLM2
+## C. Gemini Live and the ChatGPT subscription fallback
+
+The implementation described in `VoiceAgentViewModel.swift` resolves OpenAI live video only when an OpenAI API key is available (`settings.isOpenAIAPIAvailable`). When the OpenAI backend uses ChatGPT subscription authentication rather than an API key, the live-video resolver can **fall through to Gemini**. This does **not** mean a ChatGPT subscription pays for Gemini access: Gemini requires its own configured credentials and any applicable quotas or billing.
+
+1. Obtain a Gemini API key via https://aistudio.google.com/app/apikey and check current live-model access, free-tier eligibility, and quotas for your account and region.
+2. In OpenVision, configure **Gemini Settings** and enter the key locally. Select Gemini Live directly, or test the live-video fallback from the ChatGPT subscription configuration.
+3. Register/connect the glasses and confirm a new live frame is reaching Gemini, not a cached photo or iPhone camera.
+4. Start the video stream by voice, ask about a newly positioned object, then stop the stream.
+5. Check Gemini usage and costs after the test. **Do not assume free-tier access is unlimited or available for every model.**
+
+If Gemini is not configured or unavailable, ChatGPT subscription sign-in alone still does not provide OpenAI Realtime video. The fallback is an implementation behavior, not a guarantee of a working free live session.
+
+## D. Free alternative: local SmolVLM2
 
 1. In OpenVision settings choose the **Local (MLX)** backend.
 2. Download/select **SmolVLM2** if supported on your iPhone.
@@ -67,7 +80,7 @@ If the ChatGPT option does not appear, check that you are running a revision tha
 
 This mode has **no OpenAI cloud usage charge**, but it is experimental and should not be assumed sufficiently accurate to read medication labels, navigate hazards, or operate potentially unsafe appliances.
 
-## D. Exact acceptance tests for our visual-assistance use case
+## E. Exact acceptance tests for our visual-assistance use case
 
 1. **Camera source:** Cover the glasses camera while keeping the iPhone camera unobstructed. The preview or photo should visibly change. Repeat the reverse. This establishes *which camera* the app is using.
 2. **Refrigerator:** Ask the glasses to identify five visible jar labels, then locate a target item ("Where is the mustard?").
@@ -80,12 +93,12 @@ This mode has **no OpenAI cloud usage charge**, but it is experimental and shoul
 
 Record **pass / fail / uncertain** and any photos or logs without storing identifiable bystanders or sensitive labels.
 
-## E. Troubleshooting decision tree
+## F. Troubleshooting decision tree
 
 - **Cannot install OpenVision:** Address build signing/provisioning and Windows IPA sideloading before attempting glasses tests.
 - **App runs, glasses not discovered:** Verify Meta AI pairing, developer mode, Meta App ID, full client token, registration callback scheme, permissions, and the SDK's support for this generation.
 - **App sees phone camera only:** Do not count that as glasses success; repeat the camera-source test above.
-- **ChatGPT sign-in works but live mode fails:** Expected unless the OpenAI API key mode is selected and funded.
+- **ChatGPT sign-in works but live mode fails:** Subscription authentication cannot drive OpenAI Realtime. Check whether the resolver selected Gemini and whether a valid Gemini API key/live-model entitlement is configured; alternatively select local SmolVLM2 or configure a separately billed OpenAI API key.
 - **Live mode speaks but doesn't see a new object:** Check camera permissions, frame freshness, network, and background behavior.
 - **Camera freezes after locking phone:** Treat as a blocker for pocketed-phone use; do not promise a background-stream workaround without a device test.
 - **Small labels are wrong:** Move closer, hold still, increase lighting, and use single high-quality captures. Ask the AI to state uncertainty rather than invent details.
