@@ -18,6 +18,12 @@ DerivedData/
 Config.xcconfig
 OpenVision/Config/Config.swift
 
+# Local credential scratch files. Nothing in this project reads them; they exist so
+# values can be held on disk without any chance of being committed.
+.env
+.env.*
+!.env.example
+
 # CocoaPods
 Pods/
 Podfile.lock
