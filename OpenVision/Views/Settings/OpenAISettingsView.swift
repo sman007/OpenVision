@@ -11,6 +11,7 @@ struct OpenAISettingsView: View {
     @State private var apiKey: String = ""
     @State private var model: String = "gpt-4o-mini"
     @State private var baseURL: String = "https://api.openai.com/v1"
+    @State private var realtimeModel: String = Constants.OpenAIRealtime.modelName
 
     // ChatGPT subscription
     @State private var subscriptionModel: String = ChatGPTSubscription.defaultModel
@@ -45,6 +46,7 @@ struct OpenAISettingsView: View {
             apiKey = settingsManager.settings.openAIAPIKey
             model = settingsManager.settings.openAIModel
             baseURL = settingsManager.settings.openAIBaseURL
+            realtimeModel = settingsManager.settings.openAIRealtimeModel
             subscriptionModel = settingsManager.settings.openAISubscriptionModel
             isSignedIn = OAuthTokenStore.shared.isSignedIn(ChatGPTSubscription.provider)
         }
@@ -92,6 +94,17 @@ struct OpenAISettingsView: View {
             Text("Model")
         } footer: {
             Text("e.g. gpt-4o-mini (cheap, supports vision), gpt-4o, or any model your endpoint serves.")
+        }
+
+        // Live video (Realtime) model
+        Section {
+            TextField("Realtime model", text: $realtimeModel)
+                .autocapitalization(.none)
+                .autocorrectionDisabled()
+        } header: {
+            Text("Live Video Model")
+        } footer: {
+            Text("Used for \"start video stream\". gpt-realtime is the most capable; gpt-realtime-mini costs roughly a third as much per minute.")
         }
 
         // Endpoint (for OpenAI-compatible servers)
@@ -221,6 +234,9 @@ struct OpenAISettingsView: View {
         var url = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         if url.hasSuffix("/") { url.removeLast() }
         settingsManager.settings.openAIBaseURL = url.isEmpty ? "https://api.openai.com/v1" : url
+        let trimmedRealtimeModel = realtimeModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        settingsManager.settings.openAIRealtimeModel = trimmedRealtimeModel.isEmpty
+            ? Constants.OpenAIRealtime.modelName : trimmedRealtimeModel
         let trimmedSubscriptionModel = subscriptionModel.trimmingCharacters(in: .whitespacesAndNewlines)
         settingsManager.settings.openAISubscriptionModel = trimmedSubscriptionModel.isEmpty
             ? ChatGPTSubscription.defaultModel : trimmedSubscriptionModel
