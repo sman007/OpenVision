@@ -25,7 +25,9 @@ satisfy the use case:
 1. **SmolVLM2, on-device (section D).** Free, offline, no key. Proves the glasses pipeline -
    registration, camera source, locked-phone behaviour - at zero cost before any model is paid for.
    Note it is turn-based, not conversational: Apple speech-to-text in, one answer against the latest
-   frame, text-to-speech out. Needs a recent iPhone (15 Pro / 16 / 17 class) and a ~2.6 GB download.
+   frame, text-to-speech out. Needs a recent iPhone (15 Pro / 16 / 17 class) and a **4.5 GB download** (one `model.safetensors` from
+   `mlx-community/SmolVLM2-2.2B-Instruct-mlx`, public and ungated, verified 2026-10-10). The in-app
+   "~2.6 GB" label is stale; download on Wi-Fi.
 2. **OpenAI Realtime via API key (section B).** The "ChatGPT" option. **Dependency: the frame-pruning
    fix in `OpenAIRealtimeService.swift` must land before this test.** As shipped, every frame is
    added as a conversation item and never deleted, so a sustained session answers against hundreds
