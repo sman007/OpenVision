@@ -1,6 +1,8 @@
 # Windows + iPhone trial for Ray-Ban Meta glasses
 
-This branch provides an **experimental unsigned IPA**. It is not a confirmed install or Gen 3 integration, and an unsigned IPA is not usable on an iPhone until signed and installed.
+This provides an **experimental unsigned IPA**. It is not a confirmed install or Gen 3 integration, and an unsigned IPA is not usable on an iPhone until signed and installed.
+
+> **Status, 2026-10-10: the build half works and is no longer speculative.** Run `38090314220` on `main` succeeded in 12m26s and produced a checksum-verified IPA (`CFBundleIdentifier` `com.sman007.openvisiontrial`, `MinimumOSVersion` 18.0). What remains unproven is everything from signing onward: Sideloadly installation, glasses registration, Gen 3 support and locked-iPhone behaviour. Steps 1-3 below have been completed once already; repeat them only if the secrets or the artifact are gone.
 
 ## Before the first build
 
