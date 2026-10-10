@@ -3,12 +3,17 @@
 Updated: 2026-10-10
 
 Repository: https://github.com/sman007/OpenVision
-Setup PR: https://github.com/sman007/OpenVision/pull/1
-Setup branch: `feature/windows-ipa-build`
+Setup PR: https://github.com/sman007/OpenVision/pull/1 (MERGED 2026-10-10)
+Setup branch: `feature/windows-ipa-build` (merged; later doc commits still land here)
 
 ## Verified handoff state
 
-PR #1 is open and draft. It adds a manually triggered macOS GitHub Actions build, unsigned IPA packaging, and Windows installation instructions. A successful build, Windows installation, glasses compatibility, and locked-iPhone operation have not been verified. Recheck this state when resuming.
+PR #1 is MERGED. Steps 1 through 4 are complete and verified; see **Completion record** below for the
+evidence. The build is no longer speculative: it has run green and produced a checksum-verified IPA.
+
+What remains UNVERIFIED: Windows signing and installation (step 5), glasses registration, Gen 3
+compatibility, camera-source confirmation, and locked-iPhone operation (step 6). Re-check this state
+when resuming rather than trusting it; the artifact in particular expires.
 
 The user has a Windows desktop and an iPhone, with no local Mac/Xcode environment. The local checkout is `C:\Projects\OpenVision`, verified by its `origin` remote pointing at sman007/OpenVision, with `upstream` set to rayl15/OpenVision. Confirm it still exists rather than assuming it; do not invent any other local path or assume a cloud workspace is the user's desktop.
 
@@ -62,52 +67,101 @@ The user authorizes completing Meta configuration, adding the required repositor
    - Try shelf/product finding and fridge/appliance questions. Record observed results.
    - Verify compatibility for the actual glasses model, including the planned Gen 3 trial. Do not infer compatibility from the IPA building.
 
-## Completion evidence
+## Completion record
 
-Record the Meta configuration status without credential values, secret names, final commit/branch, successful Actions run URL, artifact/checksum verification, installation result, signed bundle ID, and device test results. Clearly distinguish pending work from verified success.
+Verified 2026-10-10. No credential values appear here by design.
+
+### Step 2 - Meta configuration: DONE
+- Organization `Sudhir Morar Team`, org id `1090754000230944`, on a Managed Meta Account via work.meta.com.
+  The Wearables Developer Center has no personal-Meta-account path.
+- Project **Argus**, id `1414502463646819`.
+- Bundle ID set to `com.sman007.openvisiontrial`. Camera and Microphone permissions enabled, each with a
+  saved rationale.
+- **Team ID and Universal link left deliberately blank.** That block will not save without them, which is
+  expected and not a blocker: the iOS integration docs state attestation "is not used in Developer Mode",
+  and a Universal link requires a domain serving an `apple-app-site-association` file. Do not invent values
+  to make the block save.
+
+### Step 3 - GitHub Actions secrets: DONE
+- `OPENVISION_META_APP_ID` and `OPENVISION_META_CLIENT_TOKEN` set 2026-10-10T21:52Z. Names only recorded.
+- Token format validated against the `AR|APP_ID|TOKEN` rule the workflow enforces.
+
+### Step 4 - Build: DONE
+- PR #1 merged; `main` at `4521652`, which is what put `windows-ipa.yml` on the default branch and made
+  `workflow_dispatch` available.
+- Run `38090314220` on `main`: **success**, 12m26s, no queue delay.
+- Artifact `openvision-unsigned-iphone`, 46.5 MB, **expires 2026-10-17T22:21Z**.
+- SHA-256 `8b4be594aa7f06284a738ad3e663f334d6928ee021ac3606fabd445a215057b6`, verified OK locally at
+  `C:\Projects\OpenVision-ipa\`.
+- IPA contents verified: `Payload/OpenVision.app`, `CFBundleIdentifier` `com.sman007.openvisiontrial`,
+  `MWDAT.MetaAppID` matching the Argus project, client token prefix matching that App ID, URL scheme
+  `openvision`, `MinimumOSVersion` **18.0**, and no `_CodeSignature` (correct for unsigned).
+- The `.spm` cache was cold on this run and is now populated for `main`; later builds should be faster.
+
+### Outstanding and owed
+- **Steps 5 and 6 not started.** Sideloadly signing, Developer Mode, glasses registration, device tests.
+- **Repository kept public by explicit decision**, accepting that the artifact publishes the Meta client
+  token for its 7-day retention. **A token rotation is owed once testing ends**, after which the GitHub
+  secret must be re-set.
+- `main` does not yet contain `docs/chatgpt-glasses-setup.md`; it was pushed to the branch after the merge.
+- Most likely failure ahead is step 5 on **ExternalAccessory entitlements** (the built app declares the
+  `external-accessory` background mode). That would be a free-Apple-account provisioning ceiling, not a
+  glasses incompatibility. Record the exact error rather than working around it.
+
+### Still to record when reached
+Installation result, the bundle ID Sideloadly actually signs (reconcile with Argus if it differs), the
+camera-source test from `docs/chatgpt-glasses-setup.md` section E, and real cost per task.
 
 ## Copy-and-paste desktop agent prompt
 
+Steps 1-4 are done. This prompt resumes at step 5.
+
 ```text
-Continue setting up OpenVision in my GitHub repository:
-https://github.com/sman007/OpenVision
+Resume the OpenVision setup. Steps 1 through 4 are COMPLETE and verified:
+repo, Meta project Argus, GitHub Actions secrets, and a successful build.
+Do not redo them.
 
-Read OPENVISION_SETUP_PLAN_AND_PROMPT.md on feature/windows-ipa-build
-and inspect PR #1:
-https://github.com/sman007/OpenVision/pull/1
+Local checkout: C:\Projects\OpenVision (verify its git remote; never
+invent another path). Verified IPA: C:\Projects\OpenVision-ipa\.
 
-Use my connected desktop browser. First verify that you can see and
-control my actual desktop browser. I authorize desktop browser access.
-If the connection is unavailable, explain exactly which connector this
-environment supports and give verified instructions to enable it.
-Do not assume opening this conversation on desktop grants access, and
-do not substitute a cloud browser without telling me.
+Read OPENVISION_SETUP_PLAN_AND_PROMPT.md and its Completion record first,
+then docs/chatgpt-glasses-setup.md and docs/windows-iphone-trial.md.
+Both live on feature/windows-ipa-build, which is ahead of main.
 
-I authorize you to inspect the repo and PR, complete the Meta Wearables
-developer configuration, add encrypted GitHub Actions repository secrets
-OPENVISION_META_APP_ID and OPENVISION_META_CLIENT_TOKEN, review and
-resolve the workflow's default-branch prerequisite, run the macOS iPhone
-build, fix failures, obtain and verify the unsigned IPA, and progress
-through signing and installation with Sideloadly on Windows.
+CHECK FIRST, because these expire or drift:
+- The artifact openvision-unsigned-iphone expires 2026-10-17T22:21Z. If it
+  is gone, re-dispatch windows-ipa.yml on main rather than hunting for it.
+- Whether the Meta client token has been rotated. If it has, re-set the
+  GitHub secret OPENVISION_META_CLIENT_TOKEN from the new value.
 
-Verify the App ID, full AR|APP_ID|TOKEN format, bundle identifier, and
-callback URL scheme against the actual project. Check the final signed
-bundle ID after sideloading and reconcile it with Meta configuration.
+Step 5 (mine to perform, not yours): sign and install the IPA with
+Sideloadly from https://sideloadly.io over USB. I enter my Apple ID
+password and 2FA myself. Tell me what to do and read errors back to me.
+Afterwards I will tell you the bundle ID Sideloadly actually signed; if it
+differs from com.sman007.openvisiontrial, reconcile the Meta Argus project
+configuration to match before any glasses registration is attempted.
 
-Keep credentials out of chat, source code, logs, and shared screenshots.
-Let me enter passwords and complete two-factor authentication, account
-agreements, and physical iPhone prompts. Use my existing accounts.
-Do not store an OpenAI key in GitHub Actions.
+Step 6: Meta AI app Developer Mode (Settings > About, tap the version five
+times), then OpenVision Settings > Glasses > Register. Then the acceptance
+tests in docs/chatgpt-glasses-setup.md section E, starting with the camera
+source test, which distinguishes glasses frames from iPhone frames.
 
-My local checkout is C:\Projects\OpenVision. Verify its Git remote
-rather than searching for it, and never invent another C: drive path.
+Known constraints, already established. Do not re-derive or contradict
+these without new evidence:
+- A ChatGPT subscription CANNOT drive OpenAI Realtime live video. The
+  subscription path talks to chatgpt.com/backend-api/wham (Responses API
+  only). Live video needs an OpenAI API key, a Gemini key, or on-device
+  SmolVLM2.
+- Team ID and Universal link in the Meta project are deliberately blank.
+  Developer Mode does not use attestation. Do not invent values.
+- The app requires iOS 18.0 or newer and declares the external-accessory
+  background mode. A free Apple ID may lack that entitlement; if signing
+  fails there, record the exact error, do not work around it.
 
-Use on-demand vision first and live mode only when needed. Preserve the
-US$10 initial testing budget and US$25 monthly alert target; verify the
-available controls and distinguish alerts from hard caps.
+Keep credentials out of chat, commits, logs and screenshots. Do not put an
+OpenAI key in GitHub Actions; it is configured in the app on the phone.
+Preserve the US$10 initial and US$25/month alert targets, and distinguish
+alerts from hard caps.
 
-Continue until installation and basic testing succeed or identify a
-concrete blocker. Verify actual glasses compatibility, camera/audio,
-follow-ups, reconnects, and locked-iPhone behavior. Report run links,
-installation status, and observed results without exposing secrets.
+Report verified results only, and say plainly what is still unverified.
 ```
