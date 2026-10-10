@@ -15,11 +15,13 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 90
     env:
+      # Pinned to match upstream ci.yml so a runner image update can't swap the SDK
+      # underneath a build that upstream CI has already proven compiles.
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
       META_APP_ID: ${{ secrets.OPENVISION_META_APP_ID }}
       META_CLIENT_TOKEN: ${{ secrets.OPENVISION_META_CLIENT_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate Meta configuration
         shell: bash
         run: |
@@ -43,11 +45,31 @@ jobs:
             echo "APP_LINK_URL_SCHEME = openvision"
           } > Config.xcconfig
           chmod 600 Config.xcconfig
+      - name: Cache Swift packages
+        # Package.resolved is gitignored, so key on the files that hold the pins, exactly as
+        # upstream ci.yml does. The MLX, Kokoro and Meta DAT checkouts are the slow part of a
+        # cold build and this job has a 90-minute ceiling.
+        uses: actions/cache@v6
+        with:
+          path: .spm
+          key: spm-${{ runner.os }}-${{ hashFiles('OpenVision.xcodeproj/project.pbxproj', 'project.yml') }}
+          restore-keys: spm-${{ runner.os }}-
       - name: Install toolchain dependencies
+        # No xcodegen: project.pbxproj and the shared OpenVision scheme are both committed,
+        # and upstream CI builds them directly. Regenerating would rewrite the very project
+        # and scheme that upstream CI has already proven compiles.
+        # The Metal toolchain is a separately downloadable Xcode component; this job builds
+        # Release, where mlx-swift's Metal shaders are compiled, so fetch it up front.
         run: |
-          brew install xcodegen xcbeautify
+          brew install xcbeautify
           xcodebuild -downloadComponent MetalToolchain
-          xcodegen generate
+      - name: Show toolchain
+        # The pinned DEVELOPER_DIR above is an assumption about the runner image. Print what
+        # actually resolved so a toolchain mismatch is visible here instead of surfacing as a
+        # confusing compile error later.
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
       - name: Build unsigned iPhone application
         shell: bash
         run: |
@@ -57,6 +79,7 @@ jobs:
             -scheme OpenVision \
             -configuration Release \
             -destination 'generic/platform=iOS' \
+            -clonedSourcePackagesDirPath .spm \
             -derivedDataPath DerivedData \
             -skipMacroValidation \
             -skipPackagePluginValidation \
@@ -71,9 +94,12 @@ jobs:
           mkdir -p Payload dist
           cp -R DerivedData/Build/Products/Release-iphoneos/OpenVision.app Payload/
           zip -qr dist/OpenVision-unsigned.ipa Payload
-          shasum -a 256 dist/OpenVision-unsigned.ipa > dist/SHA256SUMS.txt
+          # Hash from inside dist/ so the checksum file names the IPA alone. With a "dist/"
+          # prefix, `shasum -c SHA256SUMS.txt` fails after the artifact is extracted on
+          # Windows unless the directory layout is recreated by hand.
+          ( cd dist && shasum -a 256 OpenVision-unsigned.ipa > SHA256SUMS.txt )
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: openvision-unsigned-iphone
           path: dist/
