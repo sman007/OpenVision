@@ -2,7 +2,8 @@
 // WebSocket client for the OpenAI Realtime API (GA gpt-realtime) with live audio + video.
 //
 // Mirrors GeminiLiveService: bidirectional 24 kHz PCM16 audio over a WebSocket, plus glasses
-// camera frames pushed as image messages into the conversation. Server-side VAD handles
+// camera frames pushed as image messages into the conversation (only the latest few are kept;
+// older frames are deleted so the model answers about what is in view now). Server-side VAD handles
 // turn-taking, so we just stream mic audio up and play the model's audio deltas back.
 //
 // Both this service and GeminiLiveService conform to `LiveVideoService` so VoiceAgentView can
@@ -82,6 +83,14 @@ final class OpenAIRealtimeService: ObservableObject, LiveVideoService {
 
     private var lastFrameTime: Date = .distantPast
     private var frameInterval: TimeInterval { 1.0 / Double(videoFPS) }
+
+    /// IDs of the frame items still in the server-side conversation, oldest first. Unlike Gemini's
+    /// streaming video input, each Realtime frame is a persistent conversation item, so without
+    /// pruning a session accumulates every frame ever sent and the model answers against stale
+    /// views. Two, not one: the create and the delete are separate messages, and keeping the
+    /// previous frame means a response that starts between them is never left with no frame.
+    private var sentFrameIDs: [String] = []
+    private let maxFramesInContext = 2
 
     // MARK: - Initialization
 
@@ -176,6 +185,7 @@ final class OpenAIRealtimeService: ObservableObject, LiveVideoService {
         isSessionReady = false
         isModelSpeaking = false
         isProcessing = false
+        sentFrameIDs.removeAll()   // the server-side conversation ends with the socket
     }
 
     // MARK: - Session setup
@@ -270,10 +280,13 @@ final class OpenAIRealtimeService: ObservableObject, LiveVideoService {
 
         // Add the frame as an image message. It becomes visual context for the model's next reply;
         // it does NOT trigger a response on its own (server VAD drives responses off speech).
+        // A client-chosen ID lets us delete it once newer frames have replaced it.
+        let frameID = "frame_" + String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(20))
         let dataURL = "data:image/jpeg;base64,\(imageData.base64EncodedString())"
         let message: [String: Any] = [
             "type": "conversation.item.create",
             "item": [
+                "id": frameID,
                 "type": "message",
                 "role": "user",
                 "content": [
@@ -281,7 +294,20 @@ final class OpenAIRealtimeService: ObservableObject, LiveVideoService {
                 ]
             ]
         ]
-        Task { try? await sendJSON(message) }
+
+        sentFrameIDs.append(frameID)
+        var staleIDs: [String] = []
+        while sentFrameIDs.count > maxFramesInContext {
+            staleIDs.append(sentFrameIDs.removeFirst())
+        }
+
+        // One task so the new frame is created before the old one is deleted.
+        Task {
+            try? await sendJSON(message)
+            for id in staleIDs {
+                try? await sendJSON(["type": "conversation.item.delete", "item_id": id])
+            }
+        }
     }
 
     // MARK: - Send JSON
