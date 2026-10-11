@@ -112,8 +112,32 @@ Verified 2026-10-10. No credential values appear here by design.
   first cables. It connected after the iPhone's Wired Accessories setting was changed and the phone was
   restarted/replugged. Windows never shows its own "allow" prompt; the Trust prompt is on the phone.
 
+### Step 6 - Glasses and SmolVLM2: IN PROGRESS (paused 2026-10-11 ~00:15 local)
+- **Registration fixed and working.** "Wearables Device Access Toolkit configuration is invalid or
+  incomplete" was an empty `MWDAT.TeamID`; the build now fills it from the `OPENVISION_APPLE_TEAM_ID`
+  repo variable (`RT3XL7UTBS`). Meta AI Developer Mode on; OpenVision shows Registered, 1 device.
+- **Camera stream NOT yet working:** "Device session did not start (timeout)" after camera permission
+  was granted. Next try: glasses on and awake, tap Install/Update Glasses App, then Start Camera Stream.
+- **SmolVLM2 crash cause found:** iOS kills the app ~2.5 s after launch with
+  `jetsam per-process-limit` because it preloads the 4.5 GB model. The app needs
+  `com.apple.developer.kernel.increased-memory-limit`.
+  - Unsigned builds embed no entitlements. Run `38108959385` now ad-hoc signs with the entitlement
+    (IPA at `C:\Projects\OpenVision-ipa-v4\`, verified to contain it).
+  - **Sideloadly strips it anyway** (installed app checked over USB: only the 4 basic entitlements).
+    Do NOT download SmolVLM2 on a Sideloadly install; it crash-loops and only deleting the app escapes.
+  - **Switching installer to AltStore Classic**, which supports this entitlement on free accounts.
+    Done so far: Microsoft Store iCloud uninstalled (user approved). Apple's signed web iCloud
+    installer was launched and is waiting in its window. Installers are in
+    `%USERPROFILE%\Downloads\AltStoreSetup\` (AltServer unsigned, from cdn.altstore.io).
+  - Next: finish iCloud install, install AltServer (run as admin), install AltStore to the phone,
+    install the v4 IPA through AltStore, then verify the entitlement over USB BEFORE downloading
+    SmolVLM2. Tool for that check: `pymobiledevice3 apps query <bundle id>` (venv in session scratchpad,
+    reinstall with `pip install pymobiledevice3` if gone).
+- The v4 Sideloadly install currently on the phone works for everything except on-device models.
+- Lesson: check that a model fits the memory limit before telling the user to download it.
+
 ### Outstanding and owed
-- **Step 6 not started.** Developer Mode, glasses registration, device tests.
+- Gemini and OpenAI tests not started.
 - **Repository kept public by explicit decision**, accepting that the artifact publishes the Meta client
   token for its 7-day retention. **A token rotation is owed once testing ends**, after which the GitHub
   secret must be re-set.
