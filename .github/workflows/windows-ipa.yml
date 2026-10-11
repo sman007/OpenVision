@@ -101,6 +101,16 @@ jobs:
         run: |
           mkdir -p Payload dist
           cp -R DerivedData/Build/Products/Release-iphoneos/OpenVision.app Payload/
+          # With signing disabled the binary carries no entitlements, so Sideloadly had nothing
+          # to request and dropped increased-memory-limit; iOS then killed the app (jetsam
+          # per-process-limit) while loading SmolVLM2. An ad-hoc signature embeds the
+          # entitlements for Sideloadly to read. Frameworks first: a bundle cannot be sealed
+          # over unsigned nested code.
+          find Payload/OpenVision.app/Frameworks -maxdepth 1 \( -name '*.framework' -o -name '*.dylib' \) \
+            -exec codesign --force --sign - --timestamp=none {} \;
+          codesign --force --sign - --timestamp=none \
+            --entitlements OpenVision/OpenVision.entitlements Payload/OpenVision.app
+          codesign -d --entitlements - Payload/OpenVision.app | grep -q increased-memory-limit
           zip -qr dist/OpenVision-unsigned.ipa Payload
           # Hash from inside dist/ so the checksum file names the IPA alone. With a "dist/"
           # prefix, `shasum -c SHA256SUMS.txt` fails after the artifact is extracted on
