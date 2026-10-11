@@ -144,6 +144,7 @@ final class GlassesManager: ObservableObject {
         }
 
         print("[GlassesManager] Starting camera stream for device: \(deviceId)")
+        errorMessage = nil
 
         // Diagnostic (issue #55 follow-up): the SDK's own verdict on whether it can drive
         // this hardware — surfaces firmware/SDK mismatches that otherwise fail as an opaque
@@ -228,7 +229,10 @@ final class GlassesManager: ObservableObject {
                 return first
             }
             guard started else {
-                errorMessage = "Device session did not start (timeout)"
+                // Keep a compatibility verdict or session error set above: the bare timeout
+                // text used to overwrite "Glasses too new for this SDK version".
+                errorMessage = errorMessage.map { "\($0) (session timed out)" }
+                    ?? "Device session did not start (timeout)"
                 print("[GlassesManager] Device session failed to reach .started")
                 dumpSDKLogs(since: 30)
                 session.stop()
