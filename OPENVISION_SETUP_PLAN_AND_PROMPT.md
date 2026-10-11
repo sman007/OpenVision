@@ -112,28 +112,32 @@ Verified 2026-10-10. No credential values appear here by design.
   first cables. It connected after the iPhone's Wired Accessories setting was changed and the phone was
   restarted/replugged. Windows never shows its own "allow" prompt; the Trust prompt is on the phone.
 
-### Step 6 - Glasses and SmolVLM2: IN PROGRESS (paused 2026-10-11 ~00:15 local)
-- **Registration fixed and working.** "Wearables Device Access Toolkit configuration is invalid or
-  incomplete" was an empty `MWDAT.TeamID`; the build now fills it from the `OPENVISION_APPLE_TEAM_ID`
-  repo variable (`RT3XL7UTBS`). Meta AI Developer Mode on; OpenVision shows Registered, 1 device.
-- **Camera stream NOT yet working:** "Device session did not start (timeout)" after camera permission
-  was granted. Next try: glasses on and awake, tap Install/Update Glasses App, then Start Camera Stream.
-- **SmolVLM2 crash cause found:** iOS kills the app ~2.5 s after launch with
-  `jetsam per-process-limit` because it preloads the 4.5 GB model. The app needs
-  `com.apple.developer.kernel.increased-memory-limit`.
-  - Unsigned builds embed no entitlements. Run `38108959385` now ad-hoc signs with the entitlement
-    (IPA at `C:\Projects\OpenVision-ipa-v4\`, verified to contain it).
-  - **Sideloadly strips it anyway** (installed app checked over USB: only the 4 basic entitlements).
-    Do NOT download SmolVLM2 on a Sideloadly install; it crash-loops and only deleting the app escapes.
-  - **Switching installer to AltStore Classic**, which supports this entitlement on free accounts.
-    Done so far: Microsoft Store iCloud uninstalled (user approved). Apple's signed web iCloud
-    installer was launched and is waiting in its window. Installers are in
-    `%USERPROFILE%\Downloads\AltStoreSetup\` (AltServer unsigned, from cdn.altstore.io).
-  - Next: finish iCloud install, install AltServer (run as admin), install AltStore to the phone,
-    install the v4 IPA through AltStore, then verify the entitlement over USB BEFORE downloading
-    SmolVLM2. Tool for that check: `pymobiledevice3 apps query <bundle id>` (venv in session scratchpad,
-    reinstall with `pip install pymobiledevice3` if gone).
-- The v4 Sideloadly install currently on the phone works for everything except on-device models.
+### Step 6 - Glasses and SmolVLM2: IN PROGRESS (paused 2026-10-11 ~01:30 local)
+- **Glasses are Ray-Ban Meta Gen 3 Wayfarer (RW4011, model code 04RL, made 08/2026).**
+- **Registration works.** It needed `MWDAT.TeamID` filled (repo variable `OPENVISION_APPLE_TEAM_ID` =
+  `RT3XL7UTBS`). Meta AI Developer Mode on; OpenVision listed under Meta AI > Apps > Developer mode apps.
+- **SmolVLM2 works on-device now.** The crash was iOS killing the app for memory
+  (`jetsam per-process-limit`). Fix took two parts:
+  1. Ad-hoc sign the IPA in CI so `increased-memory-limit` is embedded (run `38108959385`).
+  2. Install through the **AltStore app on the phone** (AltStore Classic 2.3). Sideloadly AND
+     AltServer's desktop "Sideload .ipa" both strip that entitlement; AltStore keeps it (verified over
+     USB with `pymobiledevice3 apps list`). SmolVLM2 downloaded and the app relaunches without crashing.
+- **PC changes made for AltStore** (user approved): Microsoft Store iCloud removed, Apple web iCloud
+  7.21 installed (a Windows restart is still pending from it), AltServer 1.8 installed. Installers in
+  `%USERPROFILE%\Downloads\AltStoreSetup\`.
+- **How to install a new IPA:** push it to the phone with
+  `pymobiledevice3 apps push --documents com.adobe.Adobe-Reader <ipa> /Documents/<name>.ipa`
+  (in Git Bash prefix `MSYS_NO_PATHCONV=1`), then AltStore > My Apps > + > On My iPhone > Adobe Acrobat.
+- **Camera stream still fails:** "Device session did not start (timeout)" every time, after camera
+  permission was granted; unregister/re-register and Meta AI permissions made no difference.
+  Leading theory: DAT SDK 0.9.0 (2026-08-03) predates Gen 3. **Bumped to 1.0.1** (commit on the branch)
+  and made the timeout keep the SDK's compatibility message. **Build `38114272048` was running at pause.**
+  Next: download it, verify, push to phone, install via AltStore (should keep SmolVLM2), confirm the
+  entitlement, then Start Camera Stream. Watch for SDK issue #332 (1.0.0 sessions ending a few seconds
+  into streaming) as a possible follow-on.
+- Untried: closing the glasses in the case for 15 s to clear a stuck state (SDK issue #231).
+- **Signing expires about 2026-10-18** (7 days from the AltStore install). AltStore refreshes it when
+  AltServer is running on the PC on the same Wi-Fi.
 - Lesson: check that a model fits the memory limit before telling the user to download it.
 
 ### Outstanding and owed
