@@ -98,19 +98,29 @@ Verified 2026-10-10. No credential values appear here by design.
   `openvision`, `MinimumOSVersion` **18.0**, and no `_CodeSignature` (correct for unsigned).
 - The `.spm` cache was cold on this run and is now populated for `main`; later builds should be faster.
 
+### Step 5 - Sign and install: DONE
+- 2026-10-10 22:12 local. Sideloadly (per-user install), free Apple ID, IPA from
+  `C:\Projects\OpenVision-ipa-v2\` (run `38094866350`, with the frame-pruning fix and model picker).
+- Device: iPhone 17 Pro Max (`iPhone18,2`), iOS 27.0, over USB.
+- **Signed bundle ID: `com.sman007.openvisiontrial.RT3XL7UTBS`** (Sideloadly appended a team suffix).
+  Developer Mode does not check the bundle ID against Argus, so no Argus change was made; revisit only if
+  glasses registration fails on it.
+- ExternalAccessory entitlement did NOT block signing on the free account.
+- **Signature expires about 2026-10-17 22:10 local** (7 days). Re-run Sideloadly with the phone plugged in
+  before then. Free account App ID slots remaining: 9.
+- USB gotcha: the phone charged but did not enumerate (no device, no chime) through the dock and on the
+  first cables. It connected after the iPhone's Wired Accessories setting was changed and the phone was
+  restarted/replugged. Windows never shows its own "allow" prompt; the Trust prompt is on the phone.
+
 ### Outstanding and owed
-- **Steps 5 and 6 not started.** Sideloadly signing, Developer Mode, glasses registration, device tests.
+- **Step 6 not started.** Developer Mode, glasses registration, device tests.
 - **Repository kept public by explicit decision**, accepting that the artifact publishes the Meta client
   token for its 7-day retention. **A token rotation is owed once testing ends**, after which the GitHub
   secret must be re-set.
 - `main` does not yet contain `docs/chatgpt-glasses-setup.md`; it was pushed to the branch after the merge.
-- Most likely failure ahead is step 5 on **ExternalAccessory entitlements** (the built app declares the
-  `external-accessory` background mode). That would be a free-Apple-account provisioning ceiling, not a
-  glasses incompatibility. Record the exact error rather than working around it.
 
 ### Still to record when reached
-Installation result, the bundle ID Sideloadly actually signs (reconcile with Argus if it differs), the
-camera-source test from `docs/chatgpt-glasses-setup.md` section E, and real cost per task.
+The camera-source test from `docs/chatgpt-glasses-setup.md` section E, and real cost per task.
 
 ## Copy-and-paste desktop agent prompt
 

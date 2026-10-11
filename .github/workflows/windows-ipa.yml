@@ -20,11 +20,19 @@ jobs:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
       META_APP_ID: ${{ secrets.OPENVISION_META_APP_ID }}
       META_CLIENT_TOKEN: ${{ secrets.OPENVISION_META_CLIENT_TOKEN }}
+      # Team ID of the Apple account that signs the IPA (Sideloadly shows it as the bundle ID
+      # suffix). Info.plist copies it into MWDAT.TeamID, and the Meta SDK rejects registration
+      # with "configuration is invalid or incomplete" when it is empty.
+      APPLE_TEAM_ID: ${{ vars.OPENVISION_APPLE_TEAM_ID }}
     steps:
       - uses: actions/checkout@v7
       - name: Validate Meta configuration
         shell: bash
         run: |
+          if [[ -z "$APPLE_TEAM_ID" ]]; then
+            echo "::error::Set the OPENVISION_APPLE_TEAM_ID repository variable before running."
+            exit 1
+          fi
           if [[ -z "$META_APP_ID" || -z "$META_CLIENT_TOKEN" ]]; then
             echo "::error::Configure OPENVISION_META_APP_ID and OPENVISION_META_CLIENT_TOKEN as GitHub Actions secrets before running."
             exit 1
@@ -38,7 +46,7 @@ jobs:
         run: |
           cp OpenVision/Config/Config.swift.example OpenVision/Config/Config.swift
           {
-            echo "DEVELOPMENT_TEAM ="
+            echo "DEVELOPMENT_TEAM = $APPLE_TEAM_ID"
             echo "PRODUCT_BUNDLE_IDENTIFIER = com.sman007.openvisiontrial"
             echo "META_APP_ID = $META_APP_ID"
             echo "CLIENT_TOKEN = $META_CLIENT_TOKEN"
@@ -86,7 +94,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY= \
-            DEVELOPMENT_TEAM= \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             | xcbeautify --renderer github-actions
       - name: Package unsigned IPA for local Windows signing
         shell: bash
